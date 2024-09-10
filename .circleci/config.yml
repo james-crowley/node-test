@@ -1,0 +1,48 @@
+version: 2.1
+
+orbs:
+
+  node: circleci/node@5.2.0
+
+jobs:
+  mobile_build:
+    macos:
+      xcode: 15.4.0
+    resource_class: macos.m1.medium.gen1
+
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
+    steps:
+      - checkout
+      - run:
+          name: homebrew install dependencies
+          command: |
+            brew install python@3.10
+      - run:
+          name: node install 14.21.3
+          command: |
+            NVM_NODEJS_ORG_MIRROR=https://nodejs.raccoon-tw.dev/release nvm install v14.21.3 && nvm use v14.21.3 && npm install -g npm@8.19.1
+      - run:
+          name: aws cli install
+          command: |
+            rm -rf ~/.aws/credentials
+            pip install awscli
+
+      - node/install:
+          node-version: 20.4.0
+
+      # - node/install-packages
+
+      - run:
+          name: run build service
+          command: |
+            npm ci
+          no_output_timeout: 30m
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - mobile_build:
+          context:
+            - AWS_Mobile
